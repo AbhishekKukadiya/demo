@@ -1,0 +1,99 @@
+index.js
+_____________________________________________
+
+const express = require("express");
+const mysql = require("mysql");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+
+const app = express();
+const PORT = 5000;
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+
+// MySQL connection
+const db = mysql.createConnection({
+  host: "localhost",
+  user: "root",       // your MySQL user
+  password: "", // your MySQL password
+  database: "TechHeaven"
+});
+
+db.connect((err) => {
+  if (err) throw err;
+  console.log("MySQL Connected...");
+});
+
+// Insert API
+app.post("/api/users", (req, res) => {
+  const { name, email } = req.body;
+  const sql = "INSERT INTO users (name, email) VALUES (?, ?)";
+  db.query(sql, [name, email], (err, result) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json({ message: "User added successfully!", id: result.insertId });
+  });
+});
+
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+
+
+
+_____________________________________________________________________________________
+App.js
+______________________________________________________________________________________
+
+import { useState } from "react";
+
+function App() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("http://localhost:5000/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email })
+      });
+      const data = await res.json();
+      setMessage(data.message);
+      setName("");
+      setEmail("");
+    } catch (err) {
+      console.error(err);
+      setMessage("Error inserting user");
+    }
+  };
+
+  return (
+    <div style={{ padding: "20px" }}>
+      <h1>Add User</h1>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Enter name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+        <br /><br />
+        <input
+          type="email"
+          placeholder="Enter email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <br /><br />
+        <button type="submit">Add User</button>
+      </form>
+      <p>{message}</p>
+    </div>
+  );
+}
+
+export default App;
